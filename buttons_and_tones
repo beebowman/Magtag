@@ -1,0 +1,117 @@
+// SPDX-FileCopyrightText: 2020 Limor Fried for Adafruit Industries
+//
+// SPDX-License-Identifier: MIT
+
+//How to get Magtag Working out of the box:  
+//1. Turn on the Magtag (on button is a little switch on the SIDE. Connect USBC to laptop with the mac-provided USB-C to USB-C connect/charge cable 
+//2. Device should show ON light is on, and charge light also on if lipo battery is connected. 
+//3. Open Chrome 
+//4. Go to the Adafruit web serial tool: https://adafruit.github.io/Adafruit_WebSerial_ESPTool/ 
+//5. Click Connect. Be patient. If it won't connect, hold Boot button down, while holding it, press briefly on the Reset button, then release the Boot button. Then try to Connect again. 
+//6. Once it connects, click the Erase button and OK. Wait for everything to erase and do not disconnect! 
+//7. Next, upload the tinyUF2 file and hit Program button on WebSerial page. (bin file tiny UF2) to find this, go to https://learn.adafruit.com/adafruit-magtag/factory-reset and scroll all the way down to Adafruit Magtag bootloader 0.33.0 combined.bin 
+//8. Next, upload the Circuit Python and hit Program button on WebSerial page. (bin file also) 
+//9. Next, click or double click the Reset button on the magtag physical device
+//10. Next, restart computer/laptop. You should now see "MAGTAG" usb key drive showing up on your laptop. 
+//11. Drag and drop the "uf2" file to your MAGTAG usb. 
+//12. Now, MAGTAG should instead say CIRCUITPY as your usb key. 
+//13. Download ESP32 wifi test package/download that includes CircuitPython 10.x and code.py and settings.toml. 
+//14. Add this URL to Preferences in Arduino IDE board manager url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json 
+//15. Install neopixel library: https://learn.adafruit.com/adafruit-neopixel-uberguide/arduino-library-installation
+      ///Go to Tools > Manage Libraries > Adafruit Neopixel by Adafruit (install it) 
+//16. Connect to correct board (espressif ESP32) and port (magtag), load sketch, then press Reset on the magtag device. 
+
+
+
+// Set up e-ink Display
+#include <Adafruit_GFX.h>
+#include <Adafruit_EPD.h>
+#define EPD_CS 10
+#define EPD_DC 9
+#define EPD_MISO -1 // Not used, but required by library
+#define EPD_MOSI -1 // Not used, but required by library
+#define EPD_SCK -1  // Not used, but required by library
+#define EPD_BUSY 8
+#define EPD_RESET 7
+Adafruit_EPD<296, 128> epd; // Example for a 296x128 display, adjust as needed
+
+// Set up LED Neopixels 
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(4, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
+
+void setup() {
+  Serial.begin(115200); //Serial Monitor
+  
+  // Set Up Buttons 
+  pinMode(BUTTON_A, INPUT_PULLUP);
+  pinMode(BUTTON_B, INPUT_PULLUP);
+  pinMode(BUTTON_C, INPUT_PULLUP);
+  pinMode(BUTTON_D, INPUT_PULLUP);
+
+  // Set up Audio Speaker 
+  // set speaker enable pin to output
+  pinMode(SPEAKER_SHUTDOWN, OUTPUT);
+  // and immediately disable it to save power
+  digitalWrite(SPEAKER_SHUTDOWN, LOW);
+
+  // Set up Neopixels 
+  pixels.begin();
+  pixels.setBrightness(50);
+  pixels.fill(0xFF00FF);
+  pixels.show(); // Initialize all pixels to 'off'
+
+  //e-ink display: 
+  if (!epd.begin()) {
+    Serial.println("EPD initialization failed.");
+    while (1);
+  }
+  epd.clearDisplay();
+  epd.setTextSize(2);
+  epd.setTextColor(EPD_BLACK);
+  epd.setCursor(10, 10);
+  epd.println("Hello, World!");
+  epd.display(); // Update the e-ink display
+
+}
+
+
+
+void loop() {
+  if (! digitalRead(BUTTON_A)) { //If button A is pressed: 
+    //Show "Button A Pressed" in serial monitor at baud of 115200 
+    Serial.println("Button A pressed");
+
+    //Turn on speaker 
+    digitalWrite(SPEAKER_SHUTDOWN, HIGH);
+    //play some tones 
+    tone(A0,440); //Set tone at 440Hz tone sound 
+    delay(500);  //Play tone for 0.5 seconds length 
+    tone(A0,320);
+    delay(500);
+    tone(A0,392);
+    delay(500);
+    //Turn off speaker to conserve battery 
+    digitalWrite(SPEAKER_SHUTDOWN, LOW);
+
+    // Turn on Neopixel 
+    digitalWrite(NEOPIXEL_POWER, LOW); // on
+    pixels.fill(0xFF0000);
+    pixels.show();
+    delay(500);
+
+  }
+
+  if (! digitalRead(BUTTON_B)) {  //If button B is pressed
+    Serial.println("Button B pressed"); 
+    
+  }
+  if (! digitalRead(BUTTON_C)) { //If button C is pressed
+    Serial.println("Button C pressed");  
+  }
+  if (! digitalRead(BUTTON_D)) {  //If button D is pressed
+    Serial.println("Button D pressed");
+  }
+
+  // small debugging delay
+  delay(10);
+}
